@@ -10,5 +10,6 @@ Run any day using:
 
 ```bash
 cargo run --bin dayXX
+```
 
 **Note:** Puzzle inputs are not present in the repository. You must place your inputs in `inputs/dayXX.txt`.
