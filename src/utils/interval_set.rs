@@ -2,6 +2,12 @@ use std::cmp::*;
 use std::collections::BTreeMap;
 use std::ops::Bound::{Excluded, Included};
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Interval {
+    l: u64,
+    r: u64,
+}
+
 #[derive(Debug)]
 pub struct IntervalSet {
     // Stores disjoint, merged intervals [l, r] (inclusive)
@@ -73,6 +79,24 @@ impl IntervalSet {
         // Step 4: Add interval [new_l, new_r] and update total_length.
         self.intervals.insert(new_l, new_r);
         self.total_length = self.total_length + Self::length(new_l, new_r);
+    }
+
+    /// Overload for add(l, r)
+    pub fn add_interval(&mut self, interval: Interval) {
+        self.add(interval.l, interval.r);
+    }
+
+    /// Returns the (merged) interval that fully covers [l, r] or None if it doesn't exist
+    pub fn covered_by(&mut self, l: u64, r: u64) -> Option<Interval> {
+        self.intervals
+            .range(..=l)
+            .next_back()
+            .filter(|&(_, &rr)| rr >= r)
+            .map(|(&ll, &rr)| Interval { l: ll, r: rr })
+    }
+
+    pub fn covered_by_interval(&mut self, interval: Interval) -> Option<Interval> {
+        self.covered_by(interval.l, interval.r)
     }
 }
 
@@ -156,5 +180,18 @@ mod tests {
         s.add(67, 67);
         assert_eq!(s.intervals, BTreeMap::from([(1, 100)]));
         assert_eq!(s.total_length, 100);
+    }
+
+    #[test]
+    fn test_intervalset_coveredby() {
+        let mut s = IntervalSet::new();
+        s.add(10, 20);
+        s.add(40, 50);
+        s.add(70, 80);
+
+        assert_eq!(s.covered_by(15, 16), Some(Interval { l: 10, r: 20 }));
+        assert_eq!(s.covered_by(80, 80), Some(Interval { l: 70, r: 80 }));
+        assert_eq!(s.covered_by(40, 51), None);
+        assert_eq!(s.covered_by(40, 80), None);
     }
 }
