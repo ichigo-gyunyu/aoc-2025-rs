@@ -75,3 +75,86 @@ impl IntervalSet {
         self.total_length = self.total_length + Self::length(new_l, new_r);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_intervalset_add() {
+        let mut s = IntervalSet::new();
+
+        // 1. Add first interval
+        s.add(6, 7);
+        assert_eq!(s.intervals, BTreeMap::from([(6, 7)]));
+        assert_eq!(s.total_length, 2);
+
+        // 2. Add non-overlapping interval
+        s.add(10, 13);
+        assert_eq!(s.intervals, BTreeMap::from([(6, 7), (10, 13)]));
+        assert_eq!(s.total_length, 6);
+
+        // 3. Add touching interval (touching on both ends)
+        s.add(8, 9);
+        assert_eq!(s.intervals, BTreeMap::from([(6, 13)]));
+        assert_eq!(s.total_length, 8);
+
+        // 4. Add touching interval (left end touching)
+        s.add(14, 17);
+        assert_eq!(s.intervals, BTreeMap::from([(6, 17)]));
+        assert_eq!(s.total_length, 12);
+
+        // 5. Add touching interval (left end touching, but in between another interval)
+        s.add(30, 40);
+        s.add(18, 20);
+        assert_eq!(s.intervals, BTreeMap::from([(6, 20), (30, 40)]));
+        assert_eq!(s.total_length, 26);
+
+        // 6. Add touching interval (right end touching)
+        s.add(3, 5);
+        assert_eq!(s.intervals, BTreeMap::from([(3, 20), (30, 40)]));
+        assert_eq!(s.total_length, 29);
+
+        // 7. Add touching interval (right end touching, but in between another interval)
+        s.add(27, 29);
+        assert_eq!(s.intervals, BTreeMap::from([(3, 20), (27, 40)]));
+        assert_eq!(s.total_length, 32);
+
+        // 8. Add overlapping interval (overlapping on both ends)
+        s.add(5, 35);
+        assert_eq!(s.intervals, BTreeMap::from([(3, 40)]));
+        assert_eq!(s.total_length, 38);
+
+        // 9. Add overlapping interval (left end overlapping)
+        s.add(33, 52);
+        assert_eq!(s.intervals, BTreeMap::from([(3, 52)]));
+        assert_eq!(s.total_length, 50);
+
+        // 10. Add overlapping interval (left end overlapping, but in between another interval)
+        s.add(67, 80);
+        s.add(45, 60);
+        assert_eq!(s.intervals, BTreeMap::from([(3, 60), (67, 80)]));
+        assert_eq!(s.total_length, 72);
+
+        // 11. Add overlapping interval (right end overlapping)
+        s.add(2, 49);
+        assert_eq!(s.intervals, BTreeMap::from([(2, 60), (67, 80)]));
+        assert_eq!(s.total_length, 73);
+
+        // 12. Add overlapping interval (right end overlapping, but in between another interval)
+        s.add(65, 77);
+        assert_eq!(s.intervals, BTreeMap::from([(2, 60), (65, 80)]));
+        assert_eq!(s.total_length, 75);
+
+        // 13. Add overlapping interval (multiple intervals overlapping)
+        s.add(90, 94);
+        s.add(1, 100);
+        assert_eq!(s.intervals, BTreeMap::from([(1, 100)]));
+        assert_eq!(s.total_length, 100);
+
+        // 14. Add interval that is fully embedded in the interval set (no-op)
+        s.add(67, 67);
+        assert_eq!(s.intervals, BTreeMap::from([(1, 100)]));
+        assert_eq!(s.total_length, 100);
+    }
+}
