@@ -87,7 +87,7 @@ impl IntervalSet {
     }
 
     /// Returns the (merged) interval that fully covers [l, r] or None if it doesn't exist
-    pub fn covered_by(&mut self, l: u64, r: u64) -> Option<Interval> {
+    pub fn covered_by(&self, l: u64, r: u64) -> Option<Interval> {
         self.intervals
             .range(..=l)
             .next_back()
@@ -95,8 +95,27 @@ impl IntervalSet {
             .map(|(&ll, &rr)| Interval { l: ll, r: rr })
     }
 
-    pub fn covered_by_interval(&mut self, interval: Interval) -> Option<Interval> {
+    pub fn covered_by_interval(&self, interval: Interval) -> Option<Interval> {
         self.covered_by(interval.l, interval.r)
+    }
+
+    /// Returns true if interval [l, r] is covered by any (merged) interval, false otherwise
+    pub fn is_covered(&self, l: u64, r: u64) -> bool {
+        self.covered_by(l, r).is_some()
+    }
+
+    pub fn is_covered_interval(&self, interval: Interval) -> bool {
+        self.covered_by(interval.l, interval.r).is_some()
+    }
+
+    /// Returns true if x is contained in the interval set, false otherwise
+    pub fn is_contained(&self, x: u64) -> bool {
+        self.is_covered(x, x)
+    }
+
+    /// Returns the total length convered by all intervals
+    pub fn total_length(&self) -> u64 {
+        self.total_length
     }
 }
 
@@ -183,7 +202,7 @@ mod tests {
     }
 
     #[test]
-    fn test_intervalset_coveredby() {
+    fn test_intervalset_covering() {
         let mut s = IntervalSet::new();
         s.add(10, 20);
         s.add(40, 50);
@@ -193,5 +212,12 @@ mod tests {
         assert_eq!(s.covered_by(80, 80), Some(Interval { l: 70, r: 80 }));
         assert_eq!(s.covered_by(40, 51), None);
         assert_eq!(s.covered_by(40, 80), None);
+
+        assert!(s.is_covered(15, 16));
+        assert!(s.is_covered(80, 80));
+        assert!(!s.is_covered(40, 51));
+        assert!(!s.is_covered(40, 80));
+        assert!(s.is_contained(80));
+        assert!(!s.is_contained(67));
     }
 }
