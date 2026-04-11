@@ -8,6 +8,12 @@ pub struct Interval {
     r: u64,
 }
 
+impl Interval {
+    pub fn new(l: u64, r: u64) -> Self {
+        Self { l: l, r: r }
+    }
+}
+
 #[derive(Debug)]
 pub struct IntervalSet {
     // Stores disjoint, merged intervals [l, r] (inclusive)
@@ -116,6 +122,16 @@ impl IntervalSet {
     /// Returns the total length convered by all intervals
     pub fn total_length(&self) -> u64 {
         self.total_length
+    }
+}
+
+impl From<Vec<Interval>> for IntervalSet {
+    fn from(intervals: Vec<Interval>) -> Self {
+        let mut s = IntervalSet::new();
+        for interval in intervals {
+            s.add_interval(interval);
+        }
+        s
     }
 }
 
